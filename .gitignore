@@ -2,6 +2,13 @@
 **/__pycache__*
 **/service-account.json
 **/service-account-development.json
+**/bin
+**/include
+**/lib*
+**/Lib*
+**/api/Scripts*
+
+pyvenv.cfg
 # Created by .ignore support plugin (hsz.mobi)
 ### Node template
 # Logs
@@ -133,3 +140,7 @@ terraform.rc
 
 service-account*.json
 notebook.ipynb
+
+src/api/.vscode/launch.json
+src/api/Makefile
+src/dashboard/.editorconfig

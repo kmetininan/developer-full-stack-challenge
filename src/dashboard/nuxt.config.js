@@ -1,4 +1,5 @@
 export default {
+    auth: true,
     // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
     ssr: false,
 
@@ -44,6 +45,7 @@ export default {
         ['bootstrap-vue/nuxt', { icons: true, css: true }],
         // https://go.nuxtjs.dev/axios
         '@nuxtjs/axios',
+        '@nuxtjs/auth-next',
     ],
 
     publicRuntimeConfig: {
@@ -55,9 +57,41 @@ export default {
     // Axios module configuration: https://go.nuxtjs.dev/config-axios
     axios: {
         // Workaround to avoid enforcing hard-coded localhost:3000: https://github.com/nuxt-community/axios-module/issues/308
-        baseURL: process.env.NODE_ENV == 'development' ? 'http://127.0.0.1:8000' : process.env.BASEURL,
+        baseURL: 'http://127.0.0.1:8000',
     },
 
     // Build Configuration: https://go.nuxtjs.dev/config-build
     build: {},
+
+    auth: {
+        strategies: {
+            local: {
+                token: {
+                    property: 'access_token',
+                    required: true,
+                    type: 'Bearer',
+                },
+                user: {
+                    property: false, // <--- Default "user"
+                    autoFetch: false,
+                },
+                endpoints: {
+                    login: {
+                        headers: {
+                            Accept: 'application/json',
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        url: '/login',
+                        method: 'post',
+                    },
+                    logout: { url: '/auth/logout', method: 'post' },
+                    user: false,
+                },
+            },
+        },
+    },
+
+    router: {
+        middleware: ['auth'],
+    },
 };
