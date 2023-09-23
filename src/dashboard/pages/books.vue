@@ -1,322 +1,208 @@
 <template>
-    <pages-layout>
-        <div>
-            <b-container fluid class="bv-example-row">
-                <b-row>
-                    <b-col>
-                        <b-row class="my-1">
-                            <b-col span="12">
-                                <b-form-input
-                                    v-model="query"
-                                    @keyup.enter="onSearch"
-                                    placeholder="Search for your book"
-                                    :type="search"
-                                ></b-form-input>
-                            </b-col>
-                            <b-col>
-                                <div>
-                                    <b-button variant="primary" v-b-modal.modal-prevent-closing>Add book</b-button>
+  <div>
+    <nav-bar></nav-bar>
+    <Container>
+      <div>
+        <b-card title="Books">
+          <b-form-input v-model="searchText" placeholder="Search books" @input="filterBooks"></b-form-input>
+          <b-button @click="showAddBookModal" variant="success" class="my-3">Add Book</b-button>
+          <!-- <b-table striped hover :items="filteredBooks" :fields="tableFields" :current-page="currentPage" :per-page="perPage"> -->
+          <b-table
+            striped
+            hover
+            :items="sortedFilteredBooks" 
+            :fields="tableFields"
+            :current-page="currentPage"
+            :per-page="perPage"
+            :sort-by.sync="sortBy"
+            :sort-desc.sync="sortDesc"
+          >
 
-                                    <b-modal
-                                        id="modal-prevent-closing"
-                                        ref="modal"
-                                        @show="resetModal"
-                                        @hidden="resetModal"
-                                        @ok="handleOk"
-                                        hide-backdrop
-                                        content-class="shadow"
-                                        title="Add book"
-                                    >
-                                        <form ref="form" @submit.stop.prevent="handleSubmit">
-                                            <b-form-group
-                                                label="Name"
-                                                label-for="name-input"
-                                                invalid-feedback="Name is required"
-                                                :state="nameState"
-                                            >
-                                                <b-form-input
-                                                    id="name-input"
-                                                    v-model="addBook.name"
-                                                    :state="nameState"
-                                                    required
-                                                ></b-form-input>
-                                            </b-form-group>
-                                            <b-form-group
-                                                label="Page Count"
-                                                label-for="pages-input"
-                                                invalid-feedback="Name is required"
-                                                :state="nameState"
-                                            >
-                                                <b-form-input
-                                                    id="pages-input"
-                                                    v-model="addBook.pages_count"
-                                                    :state="nameState"
-                                                    required
-                                                ></b-form-input>
-                                            </b-form-group>
-                                            <b-form-group
-                                                label="Author"
-                                                label-for="author-input"
-                                                invalid-feedback="Author is required"
-                                                :state="nameState"
-                                            >
-                                                <treeselect
-                                                    id="author-input"
-                                                    v-model="value"
-                                                    @input="updateValue"
-                                                    :options="authors"
-                                                />
-                                            </b-form-group>
-                                        </form>
-                                    </b-modal>
-                                </div>
+            <template #cell(actions)="row">
+              <b-button @click="editBook(row.item)" variant="primary" size="sm">Edit</b-button>
+            </template>
+          </b-table>
+          <b-pagination v-model="currentPage" :total-rows="filteredBooks.length" :per-page="perPage" class="mt-3"></b-pagination>
+        </b-card>
 
-                                <div>
-                                    <b-modal
-                                        id="modal-prevent-closing-edit"
-                                        ref="modal"
-                                        @hidden="resetModal"
-                                        @ok="handleEditSubmit"
-                                        hide-backdrop
-                                        content-class="shadow"
-                                        title="Edit book"
-                                    >
-                                        <form ref="form" @submit.stop.prevent="handleEditSubmit">
-                                            <b-form-group
-                                                label="Name"
-                                                label-for="name-input"
-                                                invalid-feedback="Name is required"
-                                                :state="nameState"
-                                            >
-                                                <b-form-input
-                                                    id="name-input"
-                                                    v-model="editBook.name"
-                                                    :state="nameState"
-                                                    required
-                                                ></b-form-input>
-                                            </b-form-group>
-                                            <b-form-group
-                                                label="Page Count"
-                                                label-for="pages-input"
-                                                invalid-feedback="Name is required"
-                                                :state="nameState"
-                                            >
-                                                <b-form-input
-                                                    id="pages-input"
-                                                    v-model="editBook.pages_count"
-                                                    :state="nameState"
-                                                    required
-                                                ></b-form-input>
-                                            </b-form-group>
-                                            <b-form-group
-                                                label="Author"
-                                                label-for="author-input"
-                                                invalid-feedback="Author is required"
-                                                :state="nameState"
-                                            >
-                                                <treeselect
-                                                    id="author-input"
-                                                    v-model="editBook.author_id"
-                                                    @input="updateValue"
-                                                    :options="authors"
-                                                />
-                                            </b-form-group>
-                                        </form>
-                                        <template #modal-footer="{ ok }" style="display: block">
-                                            <b-button size="md" variant="outline-danger" @click="deleteBook()">
-                                                Delete
-                                            </b-button>
-                                            <b-button style="float: right" size="md" variant="success" @click="ok()">
-                                                Save
-                                            </b-button>
-                                        </template>
-                                    </b-modal>
-                                </div>
-                            </b-col>
-                        </b-row>
-                    </b-col>
-                </b-row>
-                <b-row style="margin-top: 24px">
-                    <b-col>
-                        <b-table
-                            :bordered="bordered"
-                            :items="books"
-                            :select-mode="single"
-                            :fields="bookFields"
-                            :head-variant="light"
-                            selectable
-                            responsive="sm"
-                            ref="selectableTable"
-                            @row-selected="onRowSelected"
-                        ></b-table
-                    ></b-col>
-                </b-row>
-            </b-container>
-        </div>
-    </pages-layout>
+        <!-- Add/Edit Book Modal -->
+        <b-modal hide-footer v-model="showBookModal" title="Book Details">
+          <b-form @submit.prevent="saveBook">
+            <b-form-group label="Title">
+              <b-form-input v-model="bookForm.title" required></b-form-input>
+            </b-form-group>
+            <b-form-group label="Author">
+              <vue-tree-select
+                :options="authorOptions"
+                v-model="bookForm.author_id"
+                placeholder="Select Author"
+                :multiple="false"
+                :searchable="true"
+                required
+              ></vue-tree-select>
+            </b-form-group>
+            <b-form-group label="Number of Pages">
+              <b-form-input v-model="bookForm.pages" type="number" required></b-form-input>
+            </b-form-group>
+            <b-button type="submit" variant="primary">Save</b-button>
+            <b-button @click="hideBookModal" variant="secondary">Cancel</b-button>
+          </b-form>
+        </b-modal>
+      </div>
+    </Container>
+  </div>
 </template>
 
-<script>
-import Treeselect from '@riophae/vue-treeselect';
-// import the styles
-import '@riophae/vue-treeselect/dist/vue-treeselect.css';
-import PagesLayout from '../layouts/pages.vue';
-export default {
-    components: {
-        PagesLayout,
-        Treeselect,
-    },
-    data() {
-        return {
-            value: null,
-            // define options
-            authors: [],
-            bookFields: [
-                'name',
-                {
-                    key: 'author.name',
-                    label: 'Author',
-                },
-                'pages_count',
-            ],
-            bordered: true,
-            query: '',
-            addBook: {
-                name: '',
-                pages_count: 0,
-                author_id: 0,
-            },
-            nameState: null,
-            books: [],
-            editBook: {
-                id: 0,
-                name: '',
-                pages_count: 0,
-                author_id: 0,
-            },
-        };
-    },
+<script lang="ts">
+import { Vue, Component } from 'nuxt-property-decorator';
+import {getAccessToken} from "../utils/localStorageHelper";
+import VueTreeSelect from '@riophae/vue-treeselect';
+import '@riophae/vue-treeselect/dist/vue-treeselect.css'
 
-    methods: {
-        getAuthors: async function () {
-            const response = await this.$axios.get(`/authors`);
-            const authors = response.data;
-            const options = [];
-            for (let i of authors) options.push({ id: i['id'], label: i['name'] });
-            this.authors = options;
+@Component({
+    components: {
+    VueTreeSelect,
+  },
+})
+export default class Books extends Vue {
+  private searchText: string = '';
+  private books: any[] = [];
+  private filteredBooks: any[] = [];
+  private currentPage: number = 1;
+  private perPage: number = 7;
+  private accessToken: string = ''
+  private sortBy: string = 'title'; // The initial column to sort by
+  private sortDesc: boolean = true; // true for descending order, false for ascending order
+
+  private tableFields: any[] = [
+    { key: 'title', label: 'Title', sortable: true },
+    { key: 'author.name', label: 'Author', sortable: true },
+    { key: 'pages', label: 'Number of Pages', sortable: true },
+    { key: 'actions', label: 'Actions' },
+  ];
+
+  private showBookModal: boolean = false;
+  private bookForm: any = {
+    title: '',
+    author_id: null,
+    pages: 0,
+  };
+
+  private authors: any[] = [];
+
+  async mounted() {
+    await this.fetchBooks();
+    this.filterBooks()
+    await this.fetchAuthors()
+  }
+
+  get sortedFilteredBooks() {
+    return this.filteredBooks.sort((a, b) => {
+      const key = this.sortBy;
+      if (this.sortDesc) {
+        return a[key] > b[key] ? -1 : 1;
+      } else {
+        return a[key] < b[key] ? -1 : 1;
+      }
+    });
+  }
+  
+  async fetchBooks() {
+    try {
+      const accessToken: string | null = getAccessToken();
+      if (!accessToken) {
+        await this.$router.push('/login');
+      }
+      this.accessToken = accessToken!
+      const response = await this.$axios.get('/book/', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
-        getBooks: async function () {
-            const response = await this.$axios.get(`/books?q=${this.query}`);
-            this.books = response.data;
+      });
+      console.log(response.data);
+      this.books = response.data.books
+    } catch (error: any) {
+      if (error.response && error.response.status === 401) {
+        await this.$router.push('/login');
+      }else{
+        console.error(error);
+      }
+    }
+  }
+
+  async fetchAuthors(): Promise<void> {
+    try {
+      const response = await this.$axios.get('/author', {
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
         },
-        deleteBook: async function () {
-            const response = await this.$axios.delete(`/books/${this.editBook.id}`);
-            this.getBooks();
-            this.$nextTick(() => {
-                this.$bvModal.hide('modal-prevent-closing-edit');
-                this.clearSelected();
-            });
-        },
-        saveBook: async function () {
-            const response = await this.$axios.post('/books', {
-                name: this.addBook.name,
-                pages_count: this.addBook.pages_count,
-                author_id: this.addBook.author_id,
-            });
-            this.getBooks();
-        },
-        saveChangesBook: async function () {
-            const response = await this.$axios.put(`/books/${this.editBook.id}`, {
-                name: this.editBook.name,
-                pages_count: this.editBook.pages_count,
-                author_id: this.editBook.author_id,
-            });
-            this.getBooks();
-        },
-        onSearch: function (event) {
-            this.query = event.currentTarget.value;
-            this.getBooks();
-        },
-        checkFormValidity: function () {
-            const valid = this.$refs.form.checkValidity();
-            this.nameState = valid;
-            return valid;
-        },
-        resetModal: function () {
-            this.addBook = {
-                name: '',
-                pages_count: 0,
-                author_id: 0,
-            };
-            this.nameState = null;
-            this.clearSelected();
-        },
-        handleOk: function (bvModalEvent) {
-            // Prevent modal from closing
-            bvModalEvent.preventDefault();
-            // Trigger submit handler
-            this.handleSubmit();
-        },
-        handleEdit: function (bvModalEvent) {
-            // Prevent modal from closing
-            bvModalEvent.preventDefault();
-            // Trigger submit handler
-            this.handleEditSubmit();
-        },
-        handleSubmit: function () {
-            // Exit when the form isn't valid
-            if (!this.checkFormValidity()) {
-                return;
-            }
-            this.saveBook();
-            // Hide the modal manually
-            this.$nextTick(() => {
-                this.$bvModal.hide('modal-prevent-closing');
-            });
-        },
-        handleEditSubmit: function () {
-            // Exit when the form isn't valid
-            if (!this.checkFormValidity()) {
-                return;
-            }
-            this.saveChangesBook();
-            // Hide the modal manually
-            this.$nextTick(() => {
-                this.$bvModal.hide('modal-prevent-closing-edit');
-                this.clearSelected();
-            });
-        },
-        onRowSelected: function (items) {
-            if (items.length > 0) {
-                this.editBook = {
-                    id: items[0].id,
-                    name: items[0].name,
-                    pages_count: items[0].pages_count,
-                    author_id: items[0].author.id,
-                };
-                this.$bvModal.show('modal-prevent-closing-edit');
-            }
-        },
-        clearSelected: function () {
-            this.$refs.selectableTable.clearSelected();
-        },
-        addNewBook: function () {
-            const books = this.addBook.books.slice();
-            const newBook = {
-                name: '',
-                id: books.length + 1,
-                pages_count: 0,
-            };
-            books.push(newBook);
-            this.addBook.books = books;
-        },
-        updateValue(event) {
-            this.addBook.author_id = event;
-        },
-    },
-    fetch() {
-        this.getBooks();
-        this.getAuthors();
-    },
-};
+      });
+      this.authors = response.data.authors
+    } catch (error: any) {
+      if (error.response && error.response.status === 401) {
+        await this.$router.push('/login');
+      }else{
+        console.error(error);
+      }
+    }
+  }
+
+  filterBooks() {
+    this.filteredBooks = this.books.filter(book =>
+      book.title.toLowerCase().includes(this.searchText.toLowerCase())
+    );
+  }
+
+  get authorOptions() {
+    return this.authors.map((author) => ({
+      id: author.id,
+      label: author.name,
+    }));
+  }
+
+  showAddBookModal() {
+    this.bookForm = {
+      title: '',
+      author_id: null,
+      pages: 0,
+      book_id: null,
+      editForm: false,
+    };
+    this.showBookModal = true;
+  }
+
+  hideBookModal() {
+    this.showBookModal = false;
+  }
+
+  async saveBook() {
+    if (this.bookForm.editForm){
+      await this.$axios.put(`/book/${this.bookForm.book_id}`, this.bookForm, {
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+        }
+      });
+    }else{
+      await this.$axios.post(`/book`, this.bookForm, {
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+        }
+      });
+    }
+    await this.fetchBooks();
+    this.filterBooks()
+    this.showBookModal = false;
+  }
+
+  editBook(book: any) {
+    this.bookForm = {
+      title: book.title,
+      author_id: book.author.id,
+      pages: book.pages,
+      book_id: book.id,
+      editForm: true
+    };
+    this.showBookModal = true;
+  }
+}
 </script>

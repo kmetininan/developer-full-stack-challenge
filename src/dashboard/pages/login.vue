@@ -1,82 +1,69 @@
 <template>
-    <b-container class="bv-example-row bv-example-row-flex-cols">
-        <b-row>
-            <b-col style="padding-top: 200px" offset-md="4" md="4" align-self="center">
-                <b-navbar variant="faded" style="justify-content: center" type="light">
-                    <b-navbar-brand tag="h1" class="mb-0">Welcome to the Library</b-navbar-brand>
-                </b-navbar>
-                <b-form @submit="onSubmit">
-                    <b-form-group
-                        id="input-group-1"
-                        label="Username"
-                        label-for="input-1"
-                        description="Please use the provided username to login"
-                    >
-                        <b-form-input
-                            id="input-1"
-                            v-model="form.username"
-                            type="email"
-                            placeholder="Enter your username or email"
-                            required
-                        ></b-form-input>
-                    </b-form-group>
-
-                    <b-form @submit.stop.prevent>
-                        <label for="text-password">Password</label>
-                        <b-form-input
-                            @keyup.enter="onSubmit"
-                            v-model="form.password"
-                            type="password"
-                            id="text-password"
-                        ></b-form-input>
-                    </b-form>
-
-                    <b-button type="submit" style="margin: 24px 0; width: 100%" variant="primary">Submit</b-button>
-                </b-form>
-
-                <b-alert
-                    :show="dismissCountDown"
-                    dismissible
-                    variant="warning"
-                    @dismissed="dismissCountDown = 0"
-                    @dismiss-count-down="countDownChanged"
-                >
-                    Invalid username/password. Please try again
-                </b-alert>
-            </b-col>
-        </b-row>
-    </b-container>
+  <Container>
+    <div class="login-form">
+      <b-card title="Login">
+        <b-form @submit.prevent="login">
+          <b-form-group label="Username" label-for="username">
+            <b-form-input
+              id="username"
+              v-model="username"
+              required
+              placeholder="Enter your username"
+            ></b-form-input>
+          </b-form-group>
+          <b-form-group label="Password" label-for="password">
+            <b-form-input
+              id="password"
+              v-model="password"
+              type="password"
+              required
+              placeholder="Enter your password"
+            ></b-form-input>
+          </b-form-group>
+          <b-button type="submit" variant="primary">Login</b-button>
+          <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
+        </b-form>
+      </b-card>
+    </div>
+  </Container>
 </template>
 
-<script>
-export default {
-    data() {
-        return {
-            form: {
-                username: '',
-                password: '',
-            },
-            show: true,
-            dismissSecs: 5,
-            dismissCountDown: 0,
-        };
-    },
-    methods: {
-        async onSubmit(event) {
-            event.preventDefault();
-            var data = new URLSearchParams();
-            data.append('username', this.form.username);
-            data.append('password', this.form.password);
-            try {
-                let response = await this.$auth.loginWith('local', { data });
-                if (response.status === 200) {
-                    this.$auth.setUser(response.data.name);
-                    this.$router.push({ path: '/' });
-                }
-            } catch (err) {
-                this.dismissCountDown = this.dismissSecs;
-            }
-        },
-    },
-};
+<script lang="ts">
+import { Vue, Component } from 'nuxt-property-decorator';
+import { setAccessToken } from '~/utils/localStorageHelper';
+
+@Component({})
+export default class Login extends Vue {
+  private username = '';
+  private password = '';
+  private errorMessage = '';
+
+  async login(): Promise<void> {
+    try {
+      const encodedData = new URLSearchParams({
+        username: this.username,
+        password: this.password,
+      });
+      const response = await this.$axios.post(
+        '/auth/login?' + encodedData.toString(),
+        encodedData,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+      const accessToken = response.data.access_token;
+      setAccessToken(accessToken);
+      await this.$router.push('/authors');
+    } catch (error: any) {
+      if (error.response && error.response.status === 401) {
+        this.errorMessage = error.response.data.detail;
+      } else {
+        this.errorMessage = 'An error occurred. Please try again.';
+        console.error(error);
+      }
+    }
+  }
+}
 </script>
